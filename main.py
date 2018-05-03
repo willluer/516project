@@ -2,6 +2,7 @@
 from Student import Student
 from School import School
 import random
+import math
 # Initialize 5 schools
 
 # Loop 1000 times
@@ -24,8 +25,8 @@ def initializeStudents(n,schools):
     for id in range(n):
 
         type = True
-        if id < n/2:
-            type = False
+        # if id < n/2:
+        #     type = False
 
         student = Student(id,type,schools)
         studentsList.append(student)
@@ -139,16 +140,38 @@ def unassignedStudents(students):
 
 if __name__ == "__main__":
     schools = initializeSchools(2)
-    students = initializeStudents(6,schools)
+    students = initializeStudents(5, schools)
+    liarFrac = 0.1
+    numSophisticated = int(math.ceil(len(students) * liarFrac))
+    studentsSet = set(students)
+    sophisticadStud = set(random.sample(studentsSet, numSophisticated))
+    sincereStud = studentsSet - sophisticadStud
+    allSchools = {}
+
+    for school in schools:
+        studentPrefs = [0 for i in range(len(schools))]
+        for student in students:
+            for i in range(len(student.prefNoRand)):
+                if school.id == student.prefNoRand[i]:
+
+                    studentPrefs[i] += 1
+        allSchools[school.id] = studentPrefs
+    print("allSchools = ", allSchools)
 
 
-    resultsBM = bostonMechanism(schools,students)
-    print(resultsBM)
-    for key, value in resultsBM.items():
-        print("School ", key)
-        for student in value:
-            print("Student: ", student.id)
-        print("\n")
+
+
+
+
+
+
+    # resultsBM = bostonMechanism(schools,students)
+    # print(resultsBM)
+    # for key, value in resultsBM.items():
+    #     print("School ", key)
+    #     for student in value:
+    #         print("Student: ", student.id)
+    #     print("\n")
 
     # resultsGS = galeShapley(schools,students)
 
