@@ -139,26 +139,38 @@ def unassignedStudents(students):
 
 
 if __name__ == "__main__":
-    schools = initializeSchools(2)
-    students = initializeStudents(5, schools)
+    # Initialization
+    schools = initializeSchools(5)
+    students = initializeStudents(1000, schools)
+
+    # Separate sincere from sophisticated students
     liarFrac = 0.1
     numSophisticated = int(math.ceil(len(students) * liarFrac))
     studentsSet = set(students)
     sophisticadStud = set(random.sample(studentsSet, numSophisticated))
     sincereStud = studentsSet - sophisticadStud
+
     allSchools = {}
 
+
+    # Calculate dictionary of (school: [total preference count])
+    # {School 1: [Number 1st, Number 2nd,...], School 2: [Number 1st, Number 2nd,...], School 3: ...}
+    # Used to determine sophisticated students preferences
     for school in schools:
         studentPrefs = [0 for i in range(len(schools))]
         for student in students:
             for i in range(len(student.prefNoRand)):
                 if school.id == student.prefNoRand[i]:
-
                     studentPrefs[i] += 1
+
         allSchools[school.id] = studentPrefs
     print("allSchools = ", allSchools)
 
 
+
+    # Iterate through sophisticated students
+    # Update fakePreferences based on known data
+    #
 
 
 
