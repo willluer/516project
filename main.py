@@ -403,7 +403,16 @@ def galeShapley(schools, students):
     printAssignments(assignments)
 
 
+def bordaCount(assignments):
+    sum = 0
+    numSchools = len(assignments.keys())
+    for key, value in assignments.items():
+        for student in value:
+            preference = student.preference.index(school.id)
+            sum += (numSchools - preference)
+            print("Preference: ", preference, "Adding: ", (numSchools - preference))
 
+    return sum
 if __name__ == "__main__":
     # Initialization
     schools = initializeSchools(3)
@@ -474,3 +483,4 @@ if __name__ == "__main__":
     # print(resultsFake)
 
     resultsGS = galeShapley(gsSchools,gsStudents)
+    borda = bordaCount(resultsGS)
