@@ -296,10 +296,12 @@ def schoolRejection(student,school, assignment,allStudents):
         else:
             assignment[school.id] = [student]
             student.school = school.id
-        return assignment,student, allStudents
+        return assignment,student, allStudents,1
 
     else:
+        print("IN ELSE")
         if priority == 1:
+            print("P1")
             for priorityList in [school.c4,school.c3,school.c2]:
                 if len(priorityList) > 0:
                     studentToRemove = random.choice(priorityList)
@@ -307,18 +309,21 @@ def schoolRejection(student,school, assignment,allStudents):
                     assignment[school.id].remove(studentToRemove)
                     print(len(assignment[school.id]))
                     studentToRemove.school = None
-                    # print("student.school before = ", student.school)
+                    print("student.school before = ", student.school)
                     student.school = school.id
-                    # print("student.school after = ", student.school)
+                    print("student.school after = ", student.school)
 
                     allStudents = updateStudents(allStudents, student, school, studentToRemove)
                     school.students.remove(studentToRemove)
                     assignment[school.id].append(student)
                     print(len(assignment[school.id]))
-                    return assignment,student, allStudents
-
+                    return assignment,student, allStudents,0
+                else:
+                    student.rejectedFrom.append(school.id)
+                    return assignment, student,allStudents,0
 
         elif priority == 2:
+            print("P2")
             for priorityList in [school.c4,school.c3]:
                 if len(priorityList) > 0:
                     studentToRemove = random.choice(priorityList)
@@ -328,9 +333,12 @@ def schoolRejection(student,school, assignment,allStudents):
                     allStudents = updateStudents(allStudents, student, school, studentToRemove)
                     school.students.remove(studentToRemove)
                     assignment[school.id].append(student)
-                    return assignment,student, allStudents
-
+                    return assignment,student, allStudents,0
+                else:
+                    student.rejectedFrom.append(school.id)
+                    return assignment, student,allStudents,0
         elif priority == 3:
+            print("P3")
             for priorityList in [school.c4]:
                 if len(priorityList) > 0:
                     studentToRemove = random.choice(priorityList)
@@ -340,11 +348,15 @@ def schoolRejection(student,school, assignment,allStudents):
                     allStudents = updateStudents(allStudents, student, school, studentToRemove)
                     school.students.remove(studentToRemove)
                     assignment[school.id].append(student)
-                    return assignment,student, allStudents
-
+                    return assignment,student, allStudents,0
+                else:
+                    student.rejectedFrom.append(school.id)
+                    return assignment, student,allStudents,0
         else:
             # Don't add anybody
-            return assignment,student, allStudents
+            print("P4")
+            student.rejectedFrom.append(school.id)
+            return assignment,student, allStudents,0
 
 
 def getSchool(schools,id):
@@ -352,32 +364,50 @@ def getSchool(schools,id):
         if school.id == id:
             return school
 
+def printAssignments(assignments):
+    for key, value in assignments.items():
+        print("School ", key)
+        for student in value:
+            print("Student: ", student.id)
+        print("\n")
+
 
 def galeShapley(schools, students):
 
     assignments = {}
 
     while(not assignmentCount(assignments,students)):
+        print("assignment at beginning: ", printAssignments(assignments))
         # for student in students:
         student = random.choice(students)
         if student.school == None:
             for i in range(len(student.preferences)):
                 if student.preferences[i] not in student.rejectedFrom:
                     favSchool = student.preferences[i]
-                    assignments,student, students = schoolRejection(student,getSchool(schools,favSchool),assignments,students)
-                    print(assignments, "\n")
-                    print("student.school = ", student.school)
+                    favSchoolObject = getSchool(schools,favSchool)
+                    # print("SCHOOL REJECTION", schoolRejection(student,favSchoolObject,assignments,students))
+                    assignments,student,students,dec = schoolRejection(student,favSchoolObject,assignments,students)
+                    print("Current student: ",student.id)
+                    print("Current student REject list: ",student.rejectedFrom)
+
+                    print("assignment at end: ", printAssignments(assignments))
+
+                    favSchoolObject.spotsRemaining -= dec
+                    # print(assignments, "\n")
+                    # print("student.school = ", student.school)
                     break
 
         else:
             print("Student already assigned")
     # print(assignments)
+    printAssignments(assignments)
+
 
 
 if __name__ == "__main__":
     # Initialization
-    schools = initializeSchools(5)
-    students = initializeStudents(100, schools)
+    schools = initializeSchools(3)
+    students = initializeStudents(10, schools)
     gsSchools = copy.deepcopy(schools)
     gsStudents = copy.deepcopy(students)
 
