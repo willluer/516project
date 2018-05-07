@@ -4,6 +4,7 @@ from School import School
 import random
 import math
 import copy
+import pandas
 # Initialize 5 schools
 
 # Loop 1000 times
@@ -20,7 +21,7 @@ def initializeSchools(n):
         schoolsList.append(school)
     return schoolsList
 
-def initializeStudents(n,schools):
+def initializeStudents(n,schools,frac):
     studentsList = []
 
     for id in range(n):
@@ -31,9 +32,47 @@ def initializeStudents(n,schools):
 
         student = Student(id,type,schools)
         studentsList.append(student)
+    students = studentsList
+    # Separate sincere from sophisticated students
+    liarFrac = frac
+    numSophisticated = int(math.ceil(len(students) * liarFrac))
+    studentsSet = set(students)
+    sophisticatedStud = set(random.sample(studentsSet, numSophisticated))
+    sincereStud = studentsSet - sophisticatedStud
 
-    return studentsList
-        # initialize
+    allSchools = {}
+
+
+    # Calculate dictionary of (school: [total preference count])
+    # {School 1: [Number 1st, Number 2nd,...], School 2: [Number 1st, Number 2nd,...], School 3: ...}
+    # Used to determine sophisticated students preferences
+    for school in schools:
+        studentPrefs = [0 for i in range(len(schools))]
+        for student in students:
+            if student.priorities[school.id] == 1 or student.priorities[school.id] == 2:
+                if school.id == student.prefNoRand[0]:
+                    studentPrefs[0] += 1
+                if school.id == student.prefNoRand[1]:
+                    studentPrefs[1] += 1
+        allSchools[school.id] = studentPrefs
+    # print("allSchools = ", allSchools)
+    #
+    before = sophisticatedStud.copy()
+    sophisticatedStud = setFakePreferences(sophisticatedStud, schools, allSchools)
+    # print(sophisticatedStud)
+
+    counter = 0
+
+    # Iterate through sophisticated students
+    # Update fakePreferences based on known data
+
+    # sophisticatedStud = setFakePreferences(sophisticadStud,schools,allSchools)
+    #
+    allStudents = list(sophisticatedStud.union(sincereStud))
+
+    return allStudents
+
+
 def bostonMechanism(schools,students):
     # while unassigned student exists
     # enumerate round number - k
@@ -77,7 +116,7 @@ def bostonMechanismFake(schools,students):
     studentAssignments = {}
 
     roundNum = 0
-    print("Entering BMFake")
+    # print("Entering BMFake")
     while(unassignedStudents(students)): #assigning students to schools
         # print(roundNum)
         for school in schools:
@@ -217,7 +256,7 @@ def setFakePreferences(soph,schools,allSchools):
                             #$print("Changed from",student.preferences, "to",student.fakePreferences)
                             changeCount += 1
                             break
-    print("Number of sophisticated who changed =" , changeCount, "Out of", len(soph), "total")
+    # print("Number of sophisticated who changed =" , changeCount, "Out of", len(soph), "total")
     return soph
 
 
@@ -285,7 +324,7 @@ def schoolRejection(student,school, assignment,allStudents):
     # if student is higher than ppl already in take students out and put this student in
     # else reject students
     # return new assignment list
-    print("School = ", school)
+    # print("School = ", school)
 
     priority = student.priorities[school.id]
     if school.spotsRemaining > 0:
@@ -299,9 +338,9 @@ def schoolRejection(student,school, assignment,allStudents):
         return assignment,student, allStudents,1
 
     else:
-        print("IN ELSE")
+        # print("IN ELSE")
         if priority == 1:
-            print("P1")
+            # print("P1")
             for priorityList in [school.c4,school.c3,school.c2]:
                 if len(priorityList) > 0:
                     studentToRemove = random.choice(priorityList)
@@ -309,9 +348,9 @@ def schoolRejection(student,school, assignment,allStudents):
                     assignment[school.id].remove(studentToRemove)
                     print(len(assignment[school.id]))
                     studentToRemove.school = None
-                    print("student.school before = ", student.school)
+                    # print("student.school before = ", student.school)
                     student.school = school.id
-                    print("student.school after = ", student.school)
+                    # print("student.school after = ", student.school)
 
                     allStudents = updateStudents(allStudents, student, school, studentToRemove)
                     school.students.remove(studentToRemove)
@@ -323,7 +362,7 @@ def schoolRejection(student,school, assignment,allStudents):
                     return assignment, student,allStudents,0
 
         elif priority == 2:
-            print("P2")
+            # print("P2")
             for priorityList in [school.c4,school.c3]:
                 if len(priorityList) > 0:
                     studentToRemove = random.choice(priorityList)
@@ -338,7 +377,7 @@ def schoolRejection(student,school, assignment,allStudents):
                     student.rejectedFrom.append(school.id)
                     return assignment, student,allStudents,0
         elif priority == 3:
-            print("P3")
+            # print("P3")
             for priorityList in [school.c4]:
                 if len(priorityList) > 0:
                     studentToRemove = random.choice(priorityList)
@@ -354,7 +393,6 @@ def schoolRejection(student,school, assignment,allStudents):
                     return assignment, student,allStudents,0
         else:
             # Don't add anybody
-            print("P4")
             student.rejectedFrom.append(school.id)
             return assignment,student, allStudents,0
 
@@ -377,30 +415,53 @@ def galeShapley(schools, students):
     assignments = {}
 
     while(not assignmentCount(assignments,students)):
-        print("assignment at beginning: ", printAssignments(assignments))
+        # print("assignment at beginning: ", printAssignments(assignments))
         # for student in students:
         student = random.choice(students)
         if student.school == None:
             for i in range(len(student.preferences)):
-                if student.preferences[i] not in student.rejectedFrom:
-                    favSchool = student.preferences[i]
+                if student.type:
+                    pref = student.preferences
+                else:
+                    pref = student.fakePreferences
+                if pref[i] not in student.rejectedFrom:
+                    favSchool = pref[i]
                     favSchoolObject = getSchool(schools,favSchool)
                     # print("SCHOOL REJECTION", schoolRejection(student,favSchoolObject,assignments,students))
                     assignments,student,students,dec = schoolRejection(student,favSchoolObject,assignments,students)
-                    print("Current student: ",student.id)
-                    print("Current student REject list: ",student.rejectedFrom)
-
-                    print("assignment at end: ", printAssignments(assignments))
+                    # print("Current student: ",student.id)
+                    # print("Current student REject list: ",student.rejectedFrom)
+                    #
+                    # print("assignment at end: ", printAssignments(assignments))
 
                     favSchoolObject.spotsRemaining -= dec
                     # print(assignments, "\n")
                     # print("student.school = ", student.school)
                     break
 
-        else:
-            print("Student already assigned")
+        # else:
+            # print("Student already assigned")
     # print(assignments)
-    printAssignments(assignments)
+    # printAssignments(assignments)
+    return assignments
+
+def isBetterOff(assignments):
+    averageLiar = []
+    averageTruthful = []
+    for key, value in assignments.items():
+        for student in value:
+            if student.type == True:
+                preference = student.preferences.index(key)
+                averageTruthful.append(preference)
+            else:
+                preference = student.preferences.index(key)
+                averageLiar.append(preference)
+
+    avgLiar = sum(averageLiar)/len(averageLiar)
+    avgTruth = sum(averageTruthful)/len(averageTruthful)
+    return avgLiar,avgTruth
+
+
 
 
 def bordaCount(assignments):
@@ -408,62 +469,26 @@ def bordaCount(assignments):
     numSchools = len(assignments.keys())
     for key, value in assignments.items():
         for student in value:
-            preference = student.preference.index(school.id)
-            sum += (numSchools - preference)
-            print("Preference: ", preference, "Adding: ", (numSchools - preference))
+            preference = student.preferences.index(key)
+            sum += (numSchools - preference-1)
+            # print("Preference: ", preference, "Adding: ", (numSchools - preference-1))
 
     return sum
+
 if __name__ == "__main__":
     # Initialization
-    schools = initializeSchools(3)
-    students = initializeStudents(10, schools)
-    gsSchools = copy.deepcopy(schools)
-    gsStudents = copy.deepcopy(students)
-
-    # Separate sincere from sophisticated students
-    liarFrac = 1.0
-    numSophisticated = int(math.ceil(len(students) * liarFrac))
-    studentsSet = set(students)
-    sophisticatedStud = set(random.sample(studentsSet, numSophisticated))
-    sincereStud = studentsSet - sophisticatedStud
-
-    allSchools = {}
-
-
-    # Calculate dictionary of (school: [total preference count])
-    # {School 1: [Number 1st, Number 2nd,...], School 2: [Number 1st, Number 2nd,...], School 3: ...}
-    # Used to determine sophisticated students preferences
-    for school in schools:
-        studentPrefs = [0 for i in range(len(schools))]
-        for student in students:
-            if student.priorities[school.id] == 1 or student.priorities[school.id] == 2:
-                if school.id == student.prefNoRand[0]:
-                    studentPrefs[0] += 1
-                if school.id == student.prefNoRand[1]:
-                    studentPrefs[1] += 1
-        allSchools[school.id] = studentPrefs
-    # print("allSchools = ", allSchools)
+    schools = initializeSchools(5)
+    allStudents = initializeStudents(1000, schools, 1)
     #
-    before = sophisticatedStud.copy()
-    sophisticatedStud = setFakePreferences(sophisticatedStud, schools, allSchools)
-    # print(sophisticatedStud)
-
-    counter = 0
-
-    # Iterate through sophisticated students
-    # Update fakePreferences based on known data
-
-    # sophisticatedStud = setFakePreferences(sophisticadStud,schools,allSchools)
-    #
-    allStudents = list(sophisticatedStud.union(sincereStud))
-
-
-
+    # gsSchools = copy.deepcopy(schools)
+    # gsStudents = copy.deepcopy(allStudents)
 
 
     # Add check to BM to check sincere vs sophisticated
     # allStudentsCopy = copy.deepcopy(allStudents)
-    # resultsBM = bostonMechanism(schools,allStudentsCopy)
+    # resultsBM = bostonMechanism(schools,allStudents)
+    # borda = bordaCount(resultsBM)
+    # print("Boston Borda: ", borda)
     # # print(resultsBM)
     # clearedSchools = clearSchools(schools)
     # # for key, value in resultsBM.items():
@@ -472,7 +497,9 @@ if __name__ == "__main__":
     # #         print("Student: ", student.id)
     # #     print("\n")
     # allStudentsCopy2 = copy.deepcopy(allStudents)
-    # resultsFake = bostonMechanismFake(schools, allStudentsCopy2)
+    # resultsFake = bostonMechanismFake(schools, allStudents)
+    # bordaFake = bordaCount(resultsFake)
+    # print("Boston Borda: ", bordaFake)
     # # for key, value in resultsFake.items():
     # #     print("School ", key)
     # #     for student in value:
@@ -481,6 +508,66 @@ if __name__ == "__main__":
     # same = checkResults(resultsBM, resultsFake)
     # print ("Results are the same = ", same)
     # print(resultsFake)
+    #
+    #
 
-    resultsGS = galeShapley(gsSchools,gsStudents)
-    borda = bordaCount(resultsGS)
+
+    averages = {}
+    difVals = {}
+    for j in [0.1,0.33,0.66,0.9]:
+        runningSum = 0
+        iterations = 10
+        liar = []
+        truth = []
+
+        for i in range(iterations):
+            if i % 10 == 0:
+                print ("Iteration: ", i)
+
+            schools = initializeSchools(100)
+            allStudents = initializeStudents(1000, schools, j)
+            bostonResults = bostonMechanismFake(schools,allStudents)
+            borda = bordaCount(bostonResults)
+            runningSum += borda
+            liarVal, truthVal = isBetterOff(bostonResults)
+            liar.append(liarVal)
+            truth.append(truthVal)
+        # difVals[j]= vals
+            # df.loc[i]['Borda Result'] = borda
+        averages[j] = runningSum/iterations
+        finalLiar = sum(liar)/len(liar)
+        finalTruth = sum(truth)/len(truth)
+        listVals = [finalLiar, finalTruth]
+        difVals[j] = listVals
+        # df.to_csv('resultsGS' + str(j) + '.csv')
+    print("Boston Mechanism averages for fake: ", averages)
+    print("How much better of BM: ", difVals)
+
+
+
+    # averages = {}
+    # difVals = {}
+    # for j in [0.1,0.33,0.66,0.9]:
+    #     runningSum = 0
+    #     iterations = 100
+    #     # df = pandas.DataFrame(columns=['Iteration', 'Liar Fraction', 'Borda Result'])
+    #     # df['Iteration'] = list(range(iterations))
+    #     # df['LiarFrac'] = [j] * iterations
+    #     for i in range(iterations):
+    #         if i % 10 == 0:
+    #             print ("Iteration: ", i)
+    #
+    #         schools = initializeSchools(5)
+    #         allStudents = initializeStudents(1000, schools, j)
+    #         resultsGS = galeShapley(schools,allStudents)
+    #         borda = bordaCount(resultsGS)
+    #         vals = list(isBetterOff(resultsGS))
+    #         difVals[j]= vals
+    #
+    #
+    #         runningSum += borda
+    #         # df.loc[i]['Borda Result'] = borda
+    #     averages[j] = runningSum/iterations
+    #     # df.to_csv('resultsGS' + str(j) + '.csv')
+    # print("Gale Shapely averages: ", averages)
+    # print("How much better of GS: " + difVals)

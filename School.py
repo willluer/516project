@@ -1,8 +1,8 @@
 
 class School:
     def __init__(self,id,q):
-        self.spots = 4
-        self.spotsRemaining = 4
+        self.spots = 10
+        self.spotsRemaining = 10
         self.id = id # int
         self.quality = q # double
         self.students = [] #student ids enrolled
