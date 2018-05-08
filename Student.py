@@ -28,10 +28,10 @@ class Student:
                 dist = self.distances[schoolID]
                 r = random.uniform(0,1)
 
-                value = 1/dist + 4*quality + r
+                value = 1/dist + 80*quality + r
                 valueList[schoolID] = value
 
-                valueNoRand = 1/dist + 4*quality
+                valueNoRand = 1/dist + 80*quality
                 valueListNoRand[schoolID] = valueNoRand
 
             sortedValues = sorted(valueList.items(), key=operator.itemgetter(1))

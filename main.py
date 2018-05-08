@@ -5,6 +5,8 @@ import random
 import math
 import copy
 import pandas
+import matplotlib.pyplot as plt
+import numpy as np
 # Initialize 5 schools
 
 # Loop 1000 times
@@ -256,7 +258,7 @@ def setFakePreferences(soph,schools,allSchools):
                             #$print("Changed from",student.preferences, "to",student.fakePreferences)
                             changeCount += 1
                             break
-    # print("Number of sophisticated who changed =" , changeCount, "Out of", len(soph), "total")
+    print("Number of sophisticated who changed =" , changeCount, "Out of", len(soph), "total")
     return soph
 
 
@@ -423,6 +425,41 @@ def galeShapley(schools, students):
                 if student.type:
                     pref = student.preferences
                 else:
+                    pref = student.preferences
+                if pref[i] not in student.rejectedFrom:
+                    favSchool = pref[i]
+                    favSchoolObject = getSchool(schools,favSchool)
+                    # print("SCHOOL REJECTION", schoolRejection(student,favSchoolObject,assignments,students))
+                    assignments,student,students,dec = schoolRejection(student,favSchoolObject,assignments,students)
+                    # print("Current student: ",student.id)
+                    # print("Current student REject list: ",student.rejectedFrom)
+                    #
+                    # print("assignment at end: ", printAssignments(assignments))
+
+                    favSchoolObject.spotsRemaining -= dec
+                    # print(assignments, "\n")
+                    # print("student.school = ", student.school)
+                    break
+
+        # else:
+            # print("Student already assigned")
+    # print(assignments)
+    # printAssignments(assignments)
+    return assignments
+
+def galeShapleyFake(schools, students):
+
+    assignments = {}
+
+    while(not assignmentCount(assignments,students)):
+        # print("assignment at beginning: ", printAssignments(assignments))
+        # for student in students:
+        student = random.choice(students)
+        if student.school == None:
+            for i in range(len(student.preferences)):
+                if student.type:
+                    pref = student.preferences
+                else:
                     pref = student.fakePreferences
                 if pref[i] not in student.rejectedFrom:
                     favSchool = pref[i]
@@ -457,9 +494,18 @@ def isBetterOff(assignments):
                 preference = student.preferences.index(key)
                 averageLiar.append(preference)
 
-    avgLiar = sum(averageLiar)/len(averageLiar)
-    avgTruth = sum(averageTruthful)/len(averageTruthful)
-    return avgLiar,avgTruth
+    if len(averageLiar) > 0 and len(averageTruthful) > 0:
+        avgLiar = sum(averageLiar)/len(averageLiar)
+        avgTruth = sum(averageTruthful)/len(averageTruthful)
+        return avgLiar,avgTruth
+    elif len(averageLiar) == 0 and len(averageTruthful) > 0:
+        avgTruth = sum(averageTruthful)/len(averageTruthful)
+        return 0,avgTruth
+    elif len(averageLiar) > 0 and len(averageTruthful) == 0:
+        avgLiar = sum(averageLiar)/len(averageLiar)
+        return avgLiar,0
+    else:
+        return 0,0
 
 
 
@@ -511,63 +557,163 @@ if __name__ == "__main__":
     #
     #
 
+    #
+    # averages = {}
+    # difVals = {}
+    # averagesSincere = {}
+    # difValsSincere = {}
+    # avgPref = []
+    # avgPrefSincere = []
+    # # liarFracs = np.linspace(0,1,25)
+    # liarFracs = [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1]
+    # schoolsNumber = [3,4,5,6,7,8]
+    # schoolsNumber = 5
+    # studentsNumber = np.linspace(100,1000,10)
+    # # 0.25,0.5,0.75,1]
+    # for j in studentsNumber:
+    #     iterations = 10
+    #
+    #     runningSum = 0
+    #     liar = []
+    #     truth = []
+    #
+    #     runningSumSincere = 0
+    #     liarSincere = []
+    #     truthSincere = []
+    #
+    #     for i in range(iterations):
+    #         # if i % 5 == 0:
+    #         #     print ("Iteration: ", i)
+    #
+    #         schools = initializeSchools(schoolsNumber)
+    #         allStudents = initializeStudents(int(j), schools, 0.33)
+    #         schoolsCopy = copy.deepcopy(schools)
+    #         allStudentsCopy = copy.deepcopy(allStudents)
+    #
+    #         bostonResults = bostonMechanismFake(schools,allStudents)
+    #         # print("Assignment with sophisticated: ")
+    #         # printAssignments(bostonResults)
+    #         borda = bordaCount(bostonResults)
+    #         runningSum += borda
+    #         liarVal, truthVal = isBetterOff(bostonResults)
+    #         liar.append(liarVal)
+    #         truth.append(truthVal)
+    #
+    #         bostonResultsSincere = bostonMechanism(schoolsCopy,allStudentsCopy)
+    #         # print("Assignment without sophisticated: ")
+    #         # printAssignments(bostonResultsSincere)
+    #         bordaSincere = bordaCount(bostonResultsSincere)
+    #         runningSumSincere += bordaSincere
+    #         liarValSincere, truthValSincere = isBetterOff(bostonResultsSincere)
+    #         liarSincere.append(liarValSincere)
+    #         truthSincere.append(truthValSincere)
+    #     averages[j] = runningSum/(iterations*j)
+    #     finalLiar = sum(liar)/len(liar)
+    #     finalTruth = sum(truth)/len(truth)
+    #     listVals = [finalLiar, finalTruth]
+    #     difVals[j] = listVals
+    #
+    #     averagesSincere[j] = runningSumSincere/iterations
+    #     finalLiarSincere = sum(liarSincere)/len(liarSincere)
+    #     finalTruthSincere = sum(truthSincere)/len(truthSincere)
+    #     listValsSincere = [finalLiarSincere, finalTruthSincere]
+    #     difValsSincere[j] = listValsSincere
+    #
+    #     # df.to_csv('resultsGS' + str(j) + '.csv')
+    # print("Boston Mechanism averages for fake: ", averages)
+    # print("How much better of BM: ", difVals)
+    # print()
+    # print("ALL SINCERE: Boston Mechanism averages for fake: ", averagesSincere)
+    # print("ALL SINCERE: How much better of BM: ", difValsSincere)
+    #
+    # avgFake = averages.values()
+    # print(avgFake)
+    # print(schools)
+    # plt.scatter(studentsNumber,avgFake)
+    # plt.title("Social Utility (Measured via Borda Count)")
+    # plt.xlabel("Number of Students")
+    # plt.ylabel("Borda Count")
+    # plt.show()
+
+    # avgPrefsSincere = np.asarray(list(difValsSincere.values()))
+    # avgPrefs = np.asarray(list(difVals.values()))
+    # print(np.shape(avgPrefsSincere[:,0]))
+    # print(avgPrefsSincere)
+    # plt.scatter(liarFracs,avgPrefs[:,0],s=20,label="Average Liar Preference")
+    # plt.scatter(liarFracs,avgPrefsSincere[:,0],s=20,label="Average Sincere Preference")
+    # plt.title("Average preferences")
+    # plt.xlabel("Liar fraction")
+    # plt.ylabel("Average")
+    # plt.legend()
+    # plt.show()
+
+    schoolsNumber = [3,4,5,6,7,8]
+
 
     averages = {}
+    averagesFake = {}
     difVals = {}
-    for j in [0.1,0.33,0.66,0.9]:
+    difValsFake = {}
+    liarFracs = np.linspace(0,1,20)
+    studentsNumber = np.linspace(0,1000,100)
+    for j in studentsNumber:
         runningSum = 0
-        iterations = 10
-        liar = []
-        truth = []
-
+        runningSumFake = 0
+        iterations = 5
+        # df = pandas.DataFrame(columns=['Iteration', 'Liar Fraction', 'Borda Result'])
+        # df['Iteration'] = list(range(iterations))
+        # df['LiarFrac'] = [j] * iterations
         for i in range(iterations):
             if i % 10 == 0:
                 print ("Iteration: ", i)
 
-            schools = initializeSchools(100)
-            allStudents = initializeStudents(1000, schools, j)
-            bostonResults = bostonMechanismFake(schools,allStudents)
-            borda = bordaCount(bostonResults)
+            schools = initializeSchools(5)
+            allStudents = initializeStudents(int(j), schools, 0.33)
+            schoolsCopy = copy.deepcopy(schools)
+            allStudentsCopy = copy.deepcopy(allStudents)
+
+            # All Sincere
+            resultsGS = galeShapley(schools,allStudents)
+            borda = bordaCount(resultsGS)
+            vals = list(isBetterOff(resultsGS))
+            difVals[j]= vals
+
+            # Sincere and Sophisticated
+            resultsGSFake = galeShapleyFake(schoolsCopy,allStudentsCopy)
+            bordaFake = bordaCount(resultsGSFake)
+            valsFake = list(isBetterOff(resultsGSFake))
+            difValsFake[j]= valsFake
+
+
             runningSum += borda
-            liarVal, truthVal = isBetterOff(bostonResults)
-            liar.append(liarVal)
-            truth.append(truthVal)
-        # difVals[j]= vals
+            runningSumFake += bordaFake
             # df.loc[i]['Borda Result'] = borda
         averages[j] = runningSum/iterations
-        finalLiar = sum(liar)/len(liar)
-        finalTruth = sum(truth)/len(truth)
-        listVals = [finalLiar, finalTruth]
-        difVals[j] = listVals
+        averagesFake[j] = runningSumFake/(iterations*j)
         # df.to_csv('resultsGS' + str(j) + '.csv')
-    print("Boston Mechanism averages for fake: ", averages)
-    print("How much better of BM: ", difVals)
+    print("Gale Shapely averages: ", averages)
+    print("How much better of GS: ", difVals)
+    print("FAKE: Gale Shapely averages: ", averagesFake)
+    print("FAKE: How much better of GS: ", difValsFake)
 
-
-
-    # averages = {}
-    # difVals = {}
-    # for j in [0.1,0.33,0.66,0.9]:
-    #     runningSum = 0
-    #     iterations = 100
-    #     # df = pandas.DataFrame(columns=['Iteration', 'Liar Fraction', 'Borda Result'])
-    #     # df['Iteration'] = list(range(iterations))
-    #     # df['LiarFrac'] = [j] * iterations
-    #     for i in range(iterations):
-    #         if i % 10 == 0:
-    #             print ("Iteration: ", i)
+    avgFake = averagesFake.values()
+    avgTrue = averages.values()
+    plt.scatter(studentsNumber,avgFake,label="With Sophisticated")
+    # plt.scatter(liarFracs,avgTrue,label="All Sincere")
+    plt.title("Social Utility (Measured via Borda Count)")
+    plt.xlabel("Number of Students")
+    plt.ylabel("Average")
+    # plt.legend()
+    plt.show()
     #
-    #         schools = initializeSchools(5)
-    #         allStudents = initializeStudents(1000, schools, j)
-    #         resultsGS = galeShapley(schools,allStudents)
-    #         borda = bordaCount(resultsGS)
-    #         vals = list(isBetterOff(resultsGS))
-    #         difVals[j]= vals
-    #
-    #
-    #         runningSum += borda
-    #         # df.loc[i]['Borda Result'] = borda
-    #     averages[j] = runningSum/iterations
-    #     # df.to_csv('resultsGS' + str(j) + '.csv')
-    # print("Gale Shapely averages: ", averages)
-    # print("How much better of GS: " + difVals)
+    # avgPrefsSincere = np.asarray(list(difVals.values()))
+    # avgPrefs = np.asarray(list(difValsFake.values()))
+    # print(np.shape(avgPrefsSincere[:,0]))
+    # print(avgPrefsSincere)
+    # plt.scatter(liarFracs,avgPrefs[:,0],s=20,label="Average Liar Preference")
+    # plt.scatter(liarFracs,avgPrefsSincere[:,0],s=20,label="Average Sincere Preference")
+    # plt.title("Average preferences")
+    # plt.xlabel("Liar fraction")
+    # plt.ylabel("Average")
+    # plt.legend()
+    # plt.show()
