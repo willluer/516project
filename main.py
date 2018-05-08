@@ -655,7 +655,7 @@ if __name__ == "__main__":
     difVals = {}
     difValsFake = {}
     liarFracs = np.linspace(0,1,20)
-    studentsNumber = np.linspace(0,1000,100)
+    studentsNumber = np.linspace(0,1000,10)
     for j in studentsNumber:
         runningSum = 0
         runningSumFake = 0
@@ -688,7 +688,7 @@ if __name__ == "__main__":
             runningSum += borda
             runningSumFake += bordaFake
             # df.loc[i]['Borda Result'] = borda
-        averages[j] = runningSum/iterations
+        averages[j] = runningSum/iterations/j
         averagesFake[j] = runningSumFake/(iterations*j)
         # df.to_csv('resultsGS' + str(j) + '.csv')
     print("Gale Shapely averages: ", averages)
@@ -698,7 +698,7 @@ if __name__ == "__main__":
 
     avgFake = averagesFake.values()
     avgTrue = averages.values()
-    plt.scatter(studentsNumber,avgFake,label="With Sophisticated")
+    plt.scatter(studentsNumber,avgTrue,label="With Sophisticated")
     # plt.scatter(liarFracs,avgTrue,label="All Sincere")
     plt.title("Social Utility (Measured via Borda Count)")
     plt.xlabel("Number of Students")
